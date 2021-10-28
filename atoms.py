@@ -22,7 +22,6 @@ class pared_residue(residue):
 				if i._atomtype == "CB":
 					self._coord = i
 
-
 class atom:
 	"""Object that holds an atom, including 3D-coordinates
 	"""
@@ -61,3 +60,7 @@ class chain:
 		residue_pare = [pared_residue(i) for i in residue_list]
 		self._residuelist = residue_listfull
 		self._paredlist = residue_pare
+		self._chainlen = len(self.residue_listfull)
+	def chunk_out(self,chunk_size):
+		len_chain = self._chainlen
+		for i in range(0,len_chain):
