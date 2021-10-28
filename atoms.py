@@ -3,8 +3,9 @@ class residue(object):
 	"""Object that holds an amino-acid
 	"""
 	def __init__(self,atom_list):
-		self.__atomlist = atom_list
-		self.__chainID = atom_list[0][4]
+		self._atomlist = atom_list
+		self._chainID = atom_list[0][4]
+		self._resnum = atom_list[0][5]
 		self._aa = atom_list[0][3]
 		self._atoms = [atom(i) for i in atom_list]
 
@@ -38,8 +39,8 @@ class chain:
 	"""Object that holds a peptide chain
 	"""
 	def __init__(self,atom_list):
-		self.__chainID = atom_list[0][4]
-		self.__atomlist = atom_list
+		self._chainID = atom_list[0][4]
+		self._atomlist = atom_list
 	def make_residue(self):
 		"""Method to take a list of atoms and return a list of residues
 		Returns:
@@ -47,8 +48,8 @@ class chain:
 		"""
 		residue_list = []
 		tmp_list = []
-		last_res = self.__atomlist[0][5]
-		for i in self.__atomlist:
+		last_res = self._atomlist[0][5]
+		for i in self._atomlist:
 			if i[5] != last_res:
 				residue_list.append(tmp_list)
 				tmp_list = []
@@ -60,7 +61,25 @@ class chain:
 		residue_pare = [pared_residue(i) for i in residue_list]
 		self._residuelist = residue_listfull
 		self._paredlist = residue_pare
-		self._chainlen = len(self.residue_listfull)
+		self._chainlen = len(self._residuelist)
 	def chunk_out(self,chunk_size):
+		"""Method to chunk out sub-peptides
+		Args:
+			chunk_size: size of peptide surrounding residue
+		Returns:
+			List of residues with surrounding (n-1)/2
+		"""
+		tmp_list = []
+		self.make_residue()
 		len_chain = self._chainlen
+		walk = int((chunk_size - 1)/2)
 		for i in range(0,len_chain):
+			if walk < i < len_chain-walk:
+				chunk = self._paredlist[i-walk:i+walk+1]
+			elif i < walk:
+				chunk = [self._paredlist[0]]*(walk-i) +self._paredlist[0:i+walk+1]
+			elif len_chain-walk < i:
+				chunk = self._paredlist[i-walk:]+[self._paredlist[-1]]*(len_chain-i+1)
+			tmp_list.append(chunk)
+		self._chunklist = tmp_list
+		return self._chunklist

@@ -2,6 +2,7 @@ import numpy as np
 from parse_cif import list_of_atoms
 import sys
 from atoms import chain
+from calc_rmsd import align_chunks
 
 def parse_blosumfile(blosum_path):
     """Reads a substitution matrix in to a dictionary
@@ -131,9 +132,12 @@ test.score_alignment("MATKGTKRSYEQMETDGERQNATEIRASVGKMIDGIGRFYIQMCTELKLSDYEGRLIQ
 
 print test.traceback()
 """
-my_chain = list_of_atoms(sys.argv[1],"A")
-my_chain = chain(my_chain)
-my_chain.make_residue()
-print [(i._coord._X,i._coord._Y,i._coord._Z) for i in my_chain._paredlist]
-
-
+my_chain_a = list_of_atoms(sys.argv[1],"A")
+my_chain_b = list_of_atoms(sys.argv[2],"A")
+my_chain_a = chain(my_chain_a)
+my_chain_b = chain(my_chain_b)
+my_chain_a.chunk_out(5)
+my_chain_b.chunk_out(5)
+for i in range(100,105):#len(my_chain_a._residuelist)):
+    for j in range(75,125):#len(my_chain_b._residuelist)):
+        align_chunks(my_chain_a._chunklist[i],my_chain_b._chunklist[j])
