@@ -30,7 +30,7 @@ def parse_atoms(tmp_list):
 	ref_index = keys.index("_atom_site.label_seq_id")
 	model_index = keys.index("_atom_site.auth_seq_id")
 	for i in values:
-	 	if i[0] == "ATOM":
+		if i[0] == "ATOM":
 			chain_list[i[chain_index]].append([i[j] for j in labels])
 			#if i[model_index] != "." and i[ref_index] != ".":
 				#convert_dict[i[chain_index]].append((i[model_index],i[ref_index]))

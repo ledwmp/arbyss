@@ -4,54 +4,26 @@ import sys
 from atoms import chain
 from calc_rmsd import align_chunks
 
-def parse_blosumfile(blosum_path):
-    """Reads a substitution matrix in to a dictionary
-    Args:
-        Path to a substitution matrix
-    Returns:
-        dictionary with key = amino_acid + "_" + amino_acid,
-        value = substition score
-    """
-    blosum_matrix = dict()
-    with open(blosum_path) as r:
-        amino_acids = next(r).strip().split()
-        for line in r:
-            line = line.strip().split()
-            amino_acid,scores = line[0],line[1:]
-            for x in range(0,len(scores)):
-                subscore = scores[x]
-                blosum_matrix[amino_acids[x]+"_"+amino_acid] = int(subscore)
-    r.close()
-    return blosum_matrix
-
-blosum_matrix = parse_blosumfile("blosum62.txt")
-
 class global_alignment:
     """Alignment class to implement needleman-wunsch with gap, extend2, and extend2+
 
     """
-    def __init__(self,submatrix,gap,extendrecent,extend):
-        self.submatrix = submatrix
+    def __init__(self,gap):
         self.gap = gap
-        self.extend = extend
-        self.extendrecent = extendrecent
     def init_matrix(self):
         """Method to initialize the recursion matrices
 
         """
         self.scorem  = np.zeros((self.len1,self.len2),float)
-        self.scorex = np.zeros((self.len1,self.len2),float)
-        self.scorey = np.zeros((self.len1,self.len2),float)
+        self.tracem = np.zeros((self.len1,self.len2),str)
         for i in range(1,self.len1):
-            self.scorem[i][0],self.scorex[i][0],self.scorey[i][0] = \
-                np.NINF,np.NINF,-(self.gap+self.extend*(i-1))
+            self.scorem[i][0] = self.gap*(i)
+            self.tracem[i][0] = "u"
         for j in range(1,self.len2):
-            self.scorem[0][j],self.scorex[0][j],self.scorey[0][j] = \
-                np.NINF,-(self.gap+self.extend*(j-1)),np.NINF
-        self.scorex[0][0] = np.NINF
-        self.scorey[0][0] = np.NINF
-
-    def score_matrix(self,i,j,amino_key,is_trace):
+            self.scorem[0][j] = self.gap*(j)
+            self.tracem[0][j] = "l"
+        self.tracem[0][0] = "s"
+    def score_matrix(self,amino1,amino2,i,j):
         """Method to score the recursion matrices
         Args:
             i: position in peptide1
@@ -61,35 +33,26 @@ class global_alignment:
         Returns:
             Tuples of scores from diagonal matrix, insertion peptide 2, insertion peptide1
         """
-        X = ((-self.gap+self.scorem[i][j-1]),\
-            (-self.extend+self.scorex[i][j-1]),\
-            (-self.extendrecent+self.scorey[i][j-1]),\
-            )
-        Y = ((-self.gap+self.scorem[i-1][j]),\
-            (-self.extendrecent+self.scorex[i-1][j]),\
-            (-self.extend+self.scorey[i-1][j]),
-        )
-        M = ((self.submatrix[amino_key]+self.scorem[i-1][j-1]),\
-            (self.submatrix[amino_key]+self.scorex[i-1][j-1]),\
-            (self.submatrix[amino_key]+self.scorey[i-1][j-1]),\
-        )
-        if is_trace == True:
-            return M,X,Y
-        else:
-            return max(M),max(X),max(Y)
-    def score_alignment(self,peptide1,peptide2):
+        M = ((align_chunks(amino1,amino2)+self.scorem[i-1][j-1]),"d")
+        X = ((align_chunks(amino1,amino2)+self.scorem[i][j-1]),"l")
+        Y = ((align_chunks(amino1,amino2)+self.scorem[i-1][j]),"u")
+        print(M)
+        print(X)
+        print(Y)
+        return min(M,X,Y,key = lambda x: x[0])[0],min(M,X,Y,key = lambda x: x[0])[1]
+
+    def score_alignment(self,chunk1,chunk2):
         """Method to help initialize matrices from peptides
         """
-        self.pep1,self.pep2 = list(peptide1),list(peptide2)
+        self.pep1,self.pep2 = chunk1,chunk2
         self.len1,self.len2 = len(self.pep1)+1,len(self.pep2)+1
         self.init_matrix()
         for i in range(1,self.len1):
             amino_1 = self.pep1[i-1]
             for j in range(1,self.len2):
                 amino_2 = self.pep2[j-1]
-                amino_key = amino_1+"_"+amino_2
-                self.scorem[i][j],self.scorex[i][j],self.scorey[i][j] = \
-                self.score_matrix(i,j,amino_key,False)
+                self.scorem[i][j],self.tracem[i][j] = self.score_matrix(amino_1,amino_2,i,j)
+
     def traceback(self):
         """Method to determine which matrix to trace through and create alignment
         """
@@ -133,11 +96,17 @@ test.score_alignment("MATKGTKRSYEQMETDGERQNATEIRASVGKMIDGIGRFYIQMCTELKLSDYEGRLIQ
 print test.traceback()
 """
 my_chain_a = list_of_atoms(sys.argv[1],"A")
-my_chain_b = list_of_atoms(sys.argv[2],"A")
+my_chain_b = list_of_atoms(sys.argv[1],"A")
 my_chain_a = chain(my_chain_a)
 my_chain_b = chain(my_chain_b)
-my_chain_a.chunk_out(5)
-my_chain_b.chunk_out(5)
+a = my_chain_a.chunk_out(7)
+b = my_chain_b.chunk_out(7)
+
+test = global_alignment(3.8)
+test.score_alignment(a[:50],b[:50])
+
+"""
 for i in range(100,105):#len(my_chain_a._residuelist)):
     for j in range(75,125):#len(my_chain_b._residuelist)):
         align_chunks(my_chain_a._chunklist[i],my_chain_b._chunklist[j])
+"""
