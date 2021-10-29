@@ -3,27 +3,26 @@ from parse_cif import list_of_atoms
 import sys
 from atoms import chain
 from calc_rmsd import align_chunks
+import matplotlib.pyplot as plt
 
 class global_alignment:
     """Alignment class to implement needleman-wunsch with gap, extend2, and extend2+
 
     """
-    def __init__(self,gap):
+    def __init__(self,gap,high_low):
         self.gap = gap
+        self.high = high_low
+        self.low = -1.*high_low
     def init_matrix(self):
         """Method to initialize the recursion matrices
 
         """
-        self.scorem  = np.zeros((self.len1,self.len2),float)
-        self.tracem = np.zeros((self.len1,self.len2),str)
+        self.rawm = np.zeros((self.len1,self.len2),float)
         for i in range(1,self.len1):
-            self.scorem[i][0] = self.gap*(i)
-            self.tracem[i][0] = "u"
+            self.rawm[i][0] = self.gap
         for j in range(1,self.len2):
-            self.scorem[0][j] = self.gap*(j)
-            self.tracem[0][j] = "l"
-        self.tracem[0][0] = "s"
-    def score_matrix(self,amino1,amino2,i,j):
+            self.rawm[0][j] = self.gap
+    def score_matrix(self,i,j,low,high):
         """Method to score the recursion matrices
         Args:
             i: position in peptide1
@@ -33,14 +32,26 @@ class global_alignment:
         Returns:
             Tuples of scores from diagonal matrix, insertion peptide 2, insertion peptide1
         """
-        M = ((align_chunks(amino1,amino2)+self.scorem[i-1][j-1]),"d")
-        X = ((align_chunks(amino1,amino2)+self.scorem[i][j-1]),"l")
-        Y = ((align_chunks(amino1,amino2)+self.scorem[i-1][j]),"u")
-        print(M)
-        print(X)
-        print(Y)
-        return min(M,X,Y,key = lambda x: x[0])[0],min(M,X,Y,key = lambda x: x[0])[1]
+        #need to replace raw matrix here with other adjust raw matrix
+        M = ((self.rawm[i][j]+self.scorem[i-1][j-1]),"d")
+        X = ((self.rawm[i][j]+self.scorem[i][j-1]),"l")
+        Y = ((self.rawm[i][j]+self.scorem[i-1][j]),"u")
+        return max(M,X,Y,key = lambda x: x[0])[0],max(M,X,Y,key = lambda x: x[0])[1]
 
+    def init_adjustmatrix(self):
+        self.scorem = np.zeros((self.len1,self.len2),float)
+        self.tracem = np.zeros((self.len1,self.len2),str)
+        for i in range(1,self.len1):
+            self.scorem[i][0] = self.gap*(i)
+            self.tracem[i][0] = "u"
+        for j in range(1,self.len2):
+            self.scorem[0][j] = self.gap*(j)
+            self.tracem[0][j] = "l"
+        self.tracem[0][0] = "s"
+        for i in range(1,self.len1):
+            for j in range(1,self.len2):
+                self.scorem[i][j],self.tracem[i][j] = self.score_matrix(i,j,self.low,self.high)
+        #add stuff here to adjust the score matrix calculated
     def score_alignment(self,chunk1,chunk2):
         """Method to help initialize matrices from peptides
         """
@@ -51,8 +62,14 @@ class global_alignment:
             amino_1 = self.pep1[i-1]
             for j in range(1,self.len2):
                 amino_2 = self.pep2[j-1]
-                self.scorem[i][j],self.tracem[i][j] = self.score_matrix(amino_1,amino_2,i,j)
-
+                self.rawm[i][j] = alignment_score = align_chunks(amino_1,amino_2)
+                #self.scorem[i][j],self.tracem[i][j],self.rawm[i][j] = self.score_matrix(amino_1,amino_2,i,j)
+        #plt.hist(self.rawm.flatten(),bins=25)
+        #plt.show()
+        self.extract_scores()
+        self.init_adjustmatrix()
+        print(self.scorem)
+        print(self.tracem)
     def traceback(self):
         """Method to determine which matrix to trace through and create alignment
         """
@@ -96,13 +113,13 @@ test.score_alignment("MATKGTKRSYEQMETDGERQNATEIRASVGKMIDGIGRFYIQMCTELKLSDYEGRLIQ
 print test.traceback()
 """
 my_chain_a = list_of_atoms(sys.argv[1],"A")
-my_chain_b = list_of_atoms(sys.argv[1],"A")
+my_chain_b = list_of_atoms(sys.argv[2],"A")
 my_chain_a = chain(my_chain_a)
 my_chain_b = chain(my_chain_b)
-a = my_chain_a.chunk_out(7)
-b = my_chain_b.chunk_out(7)
+a = my_chain_a.chunk_out(5)
+b = my_chain_b.chunk_out(5)
 
-test = global_alignment(3.8)
+test = global_alignment(3.8,1.)#3.8)
 test.score_alignment(a[:50],b[:50])
 
 """
