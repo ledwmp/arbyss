@@ -7,7 +7,15 @@ class residue(object):
 		self._chainID = atom_list[0][4]
 		self._resnum = atom_list[0][5]
 		self._aa = atom_list[0][3]
-		self._atoms = [atom(i) for i in atom_list]
+		self._atoms = [atom(i) for i in atom_list
+		self.oneletter()
+	def oneletter(self):
+		dict_aa = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q',\
+		 			'LYS': 'K', 'ILE': 'I', 'PRO': 'P', 'THR': 'T',\
+					 'PHE': 'F', 'ASN': 'N', 'GLY': 'G', 'HIS': 'H',\
+					  'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 'ALA': 'A',\
+					   'VAL': 'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
+		self._aa_one = dict_aa[self._aa]
 
 class pared_residue(residue):
 	"""Object that holds a pared-down residue, or beta carbon for non-GLY, alpha carbon for GLY
@@ -40,7 +48,8 @@ class chain:
 	"""
 	def __init__(self,atom_list):
 		self._chainID = atom_list[0][4]
-		self._atomlist = atom_list
+		self._atomlist = atom_list[0]
+		self._structurelist = atom_list[1]
 	def make_residue(self):
 		"""Method to take a list of atoms and return a list of residues
 		Returns:
@@ -62,6 +71,14 @@ class chain:
 		self._residuelist = residue_listfull
 		self._paredlist = residue_pare
 		self._chainlen = len(self._residuelist)
+	def define_reference(self):
+		"""Method to
+		Returns:
+			List of structure coordinates
+		"""
+		print(self._structurelist)
+		print([i._resnum for i in self._paredlist])
+		self._structurecoord = [self._paredlist[i-1]._coord for i in self._structurelist]
 	def chunk_out(self,chunk_size):
 		"""Method to chunk out sub-peptides
 		Args:
@@ -71,6 +88,8 @@ class chain:
 		"""
 		tmp_list = []
 		self.make_residue()
+		self.define_reference()
+		print(self._structurecoord)
 		len_chain = self._chainlen
 		walk = int((chunk_size - 1)/2)
 		for i in range(0,len_chain):

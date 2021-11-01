@@ -4,6 +4,7 @@ import sys
 from atoms import chain
 from calc_rmsd import align_chunks
 import matplotlib.pyplot as plt
+from needleman_wunsch import needleman_wunsch
 
 class global_alignment:
     """Alignment class to implement needleman-wunsch with gap, extend2, and extend2+
@@ -66,7 +67,7 @@ class global_alignment:
                 #self.scorem[i][j],self.tracem[i][j],self.rawm[i][j] = self.score_matrix(amino_1,amino_2,i,j)
         #plt.hist(self.rawm.flatten(),bins=25)
         #plt.show()
-        self.extract_scores()
+        #self.extract_scores()
         self.init_adjustmatrix()
         print(self.scorem)
         print(self.tracem)
