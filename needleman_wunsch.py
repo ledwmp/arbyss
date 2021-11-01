@@ -131,6 +131,10 @@ class global_alignment:
         self.align_pep2 = "".join(self.traceback_pep2[::-1])
         self.correct1 = self.resolve_alignment_dict(self.align_pep1)
         self.correct2 = self.resolve_alignment_dict(self.align_pep2)
+        self.alignkey = [(self.correct1[i],self.correct2[i]) for i in range(0,len(self.align_pep1)) \
+                        if (self.align_pep1[i] != "-" and self.align_pep2[i] != "-")
+                        ]
+
         return self.align_pep1,\
                 self.align_pep2
     @staticmethod
@@ -140,7 +144,6 @@ class global_alignment:
             if align_in[i] != "-":
                 tmp_str = align_in[0:i]
                 tmp_dict[i] = i-tmp_str.count("-")
-        print(tmp_dict)
         return tmp_dict
 
 

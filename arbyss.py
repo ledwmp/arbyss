@@ -56,13 +56,25 @@ class global_alignment:
     def score_alignment(self,chunk1,chunk2):
         """Method to help initialize matrices from peptides
         """
-        self.pep1,self.pep2 = chunk1,chunk2
+        self.tradition_alignment(chunk1,chunk2)
+        print(self.alignment.alignkey)
+        chunk1.filter_chunks([i[0] for i in self.alignment.alignkey])
+        chunk2.filter_chunks([i[1] for i in self.alignment.alignkey])
+
+
+        ########need to make changes here, must be able to align local alignmens of big chunks, evaluate miniature scoring on small chunks
+
+
+
+        print([len(i[0]) for i in chunk2._chunklist])
+        self.pep1,self.pep2 = chunk1._chunklist,chunk2._chunklist
         self.len1,self.len2 = len(self.pep1)+1,len(self.pep2)+1
         self.init_matrix()
         for i in range(1,self.len1):
             amino_1 = self.pep1[i-1]
             for j in range(1,self.len2):
                 amino_2 = self.pep2[j-1]
+                print(amino_1,amino_2)
                 self.rawm[i][j] = alignment_score = align_chunks(amino_1,amino_2)
                 #self.scorem[i][j],self.tracem[i][j],self.rawm[i][j] = self.score_matrix(amino_1,amino_2,i,j)
         #plt.hist(self.rawm.flatten(),bins=25)
@@ -105,6 +117,10 @@ class global_alignment:
             M,X,Y = self.score_matrix(i,j,amino_key,True) #find scores in next cells
         return "".join(self.traceback_pep1[::-1]),\
             "".join(self.traceback_pep2[::-1])
+    def tradition_alignment(self,a,b):
+        self.alignment = needleman_wunsch("".join([i[2]._aa_one for i in a._chunklist_inner]),"".join([i[2]._aa_one for i in b._chunklist_inner]))
+
+
 """
 test = global_alignment(blosum_matrix,15,7,1)
 test.score_alignment("MATKGTKRSYEQMETDGERQNATEIRASVGKMIDGIGRFYIQMCTELKLSDYEGRLIQNSLTIERMVLSAFDERRNKYLEEHPSAGKDPKKTGGPIYRRVDGKWRRELILYDKEEIRRIWRQANNGDDATAGLTHMMIWHSNLNDATYQRTRALVRTGMDPRMCSLMQGSTLPRRSGAAGAAVKGVGTMVMELIRMIKRGINDRNFWRGENGRRTRIAYERMCNILKGKFQTAAQRTMVDQVRESRNPGNAEFEDLIFLARSALILRGSVAHKSCLPACVYGSAVASGYDFEREGYSLVGIDPFRLLQNSQVYSLIRPNENPAHKSQLVWMACHSAAFEDLRVSSFIRGTKVVPRGKLSTRGVQIASNENMETMESSTLELRSRYWAIRTRSGGNTNQQRASSGQISIQPTFSVQRNLPFDRPTIMAAFTGNTEGRTSDMRTEIIRLMESARPEDVSFQGRGVFELSDEKATSPIVPSFDMSNEGSYFFGDNAEEYDN","MSNMDIDSINTGTIDKTPEELTPGTSGATRPIIKPATLAPPSNKRTRNPSPERTTTSSETDIGRKIQKKQTPTEIKKSVYKMVVKLGEFYNQMMVKAGLNDDMERNLIQNAQAVERILLAATDDKKTEYQKKRNARDVKEGKEEIDHNKTGGTFYKMVRDDKTIYFSPIKITFLKEEVKTMYKTTMGSDGFSGLNHIMIGHSQMNDVCFQRSKGLKRVGLDPSLISTFAGSTLPRRSGTTGVAIKGGGTLVDEAIRFIGRAMADRGLLRDIKAKTAYEKILLNLKNKCSAPQQKALVDQVIGSRNPGIADIEDLTLLARSMVVVRPSVASKVVLPISIYAKIPQLGFNTEEYSMVGYEAMALYNMATPVSILRMGDDAKDKSQLFFMSCFGAAYEDLRVLSALTGTEFKPRSALKCKGFHVPAKEQVEGMGAALMSIKLQFWAPMTRSGGNEVSGEGGSGQISCSPVFAVERPIALSKQAVRRMLSMNVEGRDADVKGNLLKMMNDSMAKKTSGNAFIGKKMFQISDKNKVNPIEIPIKQTIPNFFFGRDTAEDYDDLDY") #A,B
@@ -117,11 +133,12 @@ my_chain_a = list_of_atoms(sys.argv[1],"A")
 my_chain_b = list_of_atoms(sys.argv[2],"A")
 my_chain_a = chain(my_chain_a)
 my_chain_b = chain(my_chain_b)
-a = my_chain_a.chunk_out(5)
-b = my_chain_b.chunk_out(5)
+my_chain_a.chunk_out(25,5)
+my_chain_b.chunk_out(25,5)
+
 
 test = global_alignment(3.8,1.)#3.8)
-test.score_alignment(a[:50],b[:50])
+test.score_alignment(my_chain_a,my_chain_b)
 
 """
 for i in range(100,105):#len(my_chain_a._residuelist)):

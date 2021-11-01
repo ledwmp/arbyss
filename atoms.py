@@ -2,12 +2,13 @@
 class residue(object):
 	"""Object that holds an amino-acid
 	"""
-	def __init__(self,atom_list):
+	def __init__(self,rawnum,atom_list):
 		self._atomlist = atom_list
 		self._chainID = atom_list[0][4]
 		self._resnum = atom_list[0][5]
+		self._resraw = rawnum
 		self._aa = atom_list[0][3]
-		self._atoms = [atom(i) for i in atom_list
+		self._atoms = [atom(i) for i in atom_list]
 		self.oneletter()
 	def oneletter(self):
 		dict_aa = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q',\
@@ -20,8 +21,8 @@ class residue(object):
 class pared_residue(residue):
 	"""Object that holds a pared-down residue, or beta carbon for non-GLY, alpha carbon for GLY
 	"""
-	def __init__(self,atom_list):
-		super(pared_residue,self).__init__(atom_list)
+	def __init__(self,rawnum,atom_list):
+		super(pared_residue,self).__init__(rawnum,atom_list)
 		if self._aa == "GLY":
 			for i in self._atoms:
 				if i._atomtype == "CA":
@@ -66,39 +67,44 @@ class chain:
 				tmp_list.append(i)
 			last_res = i[5]
 		residue_list.append(tmp_list)
-		residue_listfull = [residue(i) for i in residue_list]
-		residue_pare = [pared_residue(i) for i in residue_list]
+		residue_listfull = [residue(*i) for i in enumerate(residue_list)]
+		residue_pare = [pared_residue(*i) for i in enumerate(residue_list)]
 		self._residuelist = residue_listfull
 		self._paredlist = residue_pare
 		self._chainlen = len(self._residuelist)
-	def define_reference(self):
-		"""Method to
-		Returns:
-			List of structure coordinates
-		"""
-		print(self._structurelist)
-		print([i._resnum for i in self._paredlist])
-		self._structurecoord = [self._paredlist[i-1]._coord for i in self._structurelist]
-	def chunk_out(self,chunk_size):
+
+	def chunk_out(self,chunk_size_outer,chunk_size_inner):
 		"""Method to chunk out sub-peptides
 		Args:
 			chunk_size: size of peptide surrounding residue
 		Returns:
 			List of residues with surrounding (n-1)/2
 		"""
-		tmp_list = []
+		tmp_list_outer = []
+		tmp_list_inner = []
 		self.make_residue()
-		self.define_reference()
-		print(self._structurecoord)
 		len_chain = self._chainlen
-		walk = int((chunk_size - 1)/2)
+		walk_outer = int((chunk_size_outer-1)/2)
+		walk_inner = int((chunk_size_inner - 1)/2)
 		for i in range(0,len_chain):
-			if walk < i < len_chain-walk:
-				chunk = self._paredlist[i-walk:i+walk+1]
-			elif i < walk:
-				chunk = [self._paredlist[0]]*(walk-i) +self._paredlist[0:i+walk+1]
-			elif len_chain-walk < i:
-				chunk = self._paredlist[i-walk:]+[self._paredlist[-1]]*(len_chain-i+1)
-			tmp_list.append(chunk)
-		self._chunklist = tmp_list
+			if walk_inner < i < len_chain-walk_inner:
+				chunk_inner = self._paredlist[i-walk_inner:i+walk_inner+1]
+			elif i < walk_inner:
+				chunk_inner = [self._paredlist[0]]*(walk_inner-i) +self._paredlist[0:i+walk_inner+1]
+			elif len_chain-walk_inner < i:
+				chunk_inner = self._paredlist[i-walk_inner:]+[self._paredlist[-1]]*(i-len_chain+walk_inner+1)
+			tmp_list_inner.append(chunk_inner)
+			if walk_outer < i < len_chain-walk_outer:
+				chunk_outer = self._paredlist[i-walk_outer:i+walk_outer+1]
+			elif i < walk_outer:
+				chunk_outer = [self._paredlist[0]]*(walk_outer-i) +self._paredlist[0:i+walk_outer+1]
+			elif len_chain-walk_outer < i:
+				chunk_outer = self._paredlist[i-walk_outer:]+[self._paredlist[-1]]*(i-len_chain+walk_outer+1)
+			tmp_list_outer.append(chunk_outer)
+		self._chunklist_inner = tmp_list_inner
+		self._chunklist_outer = tmp_list_outer
+		self._chunklist = [*zip(tmp_list_outer,tmp_list_inner)]
 		return self._chunklist
+	def filter_chunks(self,filter_list):
+		self._chunklist_outer = [[j for j in i if j._resraw in filter_list] for i in self._chunklist_outer]
+		self._chunklist = [*zip(self._chunklist_outer,self._chunklist_inner)]

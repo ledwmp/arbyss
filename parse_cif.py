@@ -13,6 +13,22 @@ def read_pdb(pdb_file):
 	r.close()
 	return tmp_list
 
+def whole_chain(tmp_list):
+	chain_list = []
+	if tmp_list[0] == "loop_\n":
+		keys = [i.strip() for i in tmp_list if i[0] == "_"]
+		values = [[j for j in i.split(" ") if j != ""] for i in tmp_list[1:] if i[0] != "_"]
+	labels = ["_entity_poly_seq.entity_id","_entity_poly_seq.num",\
+			"_entity_poly_seq.mon_id","_entity_poly_seq.hetero"
+			]
+	labels = [keys.index(i) for i in labels]
+	aa_index = keys.index("_entity_poly_seq.mon_id")
+	for i in values:
+		if i[0] == "1":
+			chain_list.append(i[aa_index])
+	return chain_list
+
+
 def parse_atoms(tmp_list):
 	chain_list = defaultdict(list)
 	#convert_dict = defaultdict(list)
@@ -85,14 +101,15 @@ def parse_sheets(tmp_list):
 
 def list_of_atoms(in_file,chain_id):
 	pdb_list = read_pdb(in_file)
+	whole_chain([i for i in pdb_list if "_entity_poly_seq.entity_id \n" in i][0])
 	list_of_atoms = parse_atoms([i for i in pdb_list if "_atom_site.group_PDB \n" in i][0])
 	list_of_helices = parse_helices([i for i in pdb_list if "_struct_conf.conf_type_id \n" in i][0])
 	list_of_sheets = parse_sheets([i for i in pdb_list if "_struct_sheet_range.sheet_id \n" in i][0])
 	sheets_helices = defaultdict(list)
 	for k,v in list_of_helices.items():
 		for i in v:
-			sheets_helices[k].append(int(i))
+			sheets_helices[k].append(i)
 	for k,v in list_of_sheets.items():
 		for i in v:
-			sheets_helices[k].append(int(i))
+			sheets_helices[k].append(i)
 	return list_of_atoms[chain_id],sheets_helices[chain_id]
