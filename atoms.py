@@ -2,12 +2,21 @@
 class residue(object):
 	"""Object that holds an amino-acid
 	"""
+
 	def __init__(self,atom_list):
 		self._atomlist = atom_list
 		self._chainID = atom_list[0][4]
 		self._resnum = atom_list[0][5]
 		self._aa = atom_list[0][3]
 		self._atoms = [atom(i) for i in atom_list]
+		self.oneletter()
+	def oneletter(self):
+		dict_aa = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q',\
+		 			'LYS': 'K', 'ILE': 'I', 'PRO': 'P', 'THR': 'T',\
+					 'PHE': 'F', 'ASN': 'N', 'GLY': 'G', 'HIS': 'H',\
+					  'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 'ALA': 'A',\
+					   'VAL': 'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
+		self._aa_one = dict_aa[self._aa]
 
 class pared_residue(residue):
 	"""Object that holds a pared-down residue, or beta carbon for non-GLY, alpha carbon for GLY
