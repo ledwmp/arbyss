@@ -53,8 +53,7 @@ class global_alignment:
         for i in range(1,self.len1):
             for j in range(1,self.len2):
                 self.scorem[i][j],self.tracem[i][j] = self.score_matrix(i,j)
-    def extract_scores(self):
-        self.thresh = 1.5
+
     def score_alignment(self,chunk1,chunk2):
         """Method to initialize matrices from peptides, use other methods to fill matrices
         Args:
