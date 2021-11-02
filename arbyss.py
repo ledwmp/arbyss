@@ -66,7 +66,7 @@ class global_alignment:
         self.tradition_alignment(chunk1,chunk2)
 
         def filter_both_chunks(tmp_a,tmp_b,filter_list):
-            """
+            """Filters two alignment_blocks based on residues that made it into both alignments
             """
             filt_chunk1 = [i._resraw for i in tmp_a._res_list]
             filt_chunk2 = [i._resraw for i in tmp_b._res_list]
@@ -135,8 +135,8 @@ class global_alignment:
                             "".join([i._aa_one for i in b._chunklist]))
 
 def main():
-    my_chain_a = list_of_atoms(sys.argv[1],"C")
-    my_chain_b = list_of_atoms(sys.argv[2],"C")
+    my_chain_a = list_of_atoms(sys.argv[1],"A")
+    my_chain_b = list_of_atoms(sys.argv[2],"A")
     my_chain_a = chain(my_chain_a)
     my_chain_b = chain(my_chain_b)
     my_chain_a.chunk_out(25)
