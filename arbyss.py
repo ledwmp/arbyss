@@ -5,6 +5,8 @@ from atoms import chain
 from calc_rmsd import align_chunks
 import matplotlib.pyplot as plt
 from needleman_wunsch import needleman_wunsch
+from collections import defaultdict
+
 
 class global_alignment:
     """Alignment class to implement needleman-wunsch with gap, extend2, and extend2+
@@ -74,12 +76,18 @@ class global_alignment:
                     tmp_listb.append(j)
             return ([i for i in tmp_a[0] if i._resraw in tmp_lista],tmp_a[0],tmp_a[1]),\
                         ([i for i in tmp_b[0] if i._resraw in tmp_listb],tmp_b[0],tmp_b[1])
+        tmp_dict = defaultdict(list)
         for i,j in self.alignment.alignkey:
             tmp_chunk1 = chunk1._chunklist_dict[i]
             tmp_chunk2 = chunk2._chunklist_dict[j]
             tmp_a,tmp_b = filter_both_chunks(tmp_chunk1,tmp_chunk2,self.alignment.alignkey)
             alignment_score = align_chunks(tmp_a,tmp_b)
-            print(alignment_score)
+            for k,l in alignment_score.items():
+                tmp_dict[k].append(l)
+        for i,j in self.alignment.alignkey[1:-2]:
+            print((i,j),min(tmp_dict[(i,j)]))
+
+        #print({i:np.mean(j) for i,j in tmp_dict.items()})
         ########need to make changes here, must be able to align local alignmens of big chunks, evaluate miniature scoring on small chunks
 
 
@@ -135,7 +143,7 @@ class global_alignment:
         return "".join(self.traceback_pep1[::-1]),\
             "".join(self.traceback_pep2[::-1])
     def tradition_alignment(self,a,b):
-        self.alignment = needleman_wunsch("".join([i[2]._aa_one for i in a._chunklist_inner]),"".join([i[2]._aa_one for i in b._chunklist_inner]))
+        self.alignment = needleman_wunsch("".join([i[1]._aa_one for i in a._chunklist_inner]),"".join([i[1]._aa_one for i in b._chunklist_inner]))
 
 
 """
@@ -150,8 +158,8 @@ my_chain_a = list_of_atoms(sys.argv[1],"A")
 my_chain_b = list_of_atoms(sys.argv[2],"A")
 my_chain_a = chain(my_chain_a)
 my_chain_b = chain(my_chain_b)
-my_chain_a.chunk_out(25,5)
-my_chain_b.chunk_out(25,5)
+my_chain_a.chunk_out(25,3)
+my_chain_b.chunk_out(25,3)
 
 
 test = global_alignment(3.8,1.)#3.8)
