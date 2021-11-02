@@ -3,7 +3,6 @@ from parse_cif import list_of_atoms
 import sys
 from atoms import chain
 from calc_rmsd import align_chunks
-import matplotlib.pyplot as plt
 from needleman_wunsch import needleman_wunsch
 from collections import defaultdict
 
@@ -30,7 +29,6 @@ class global_alignment:
         Returns:
             (minimum score of current box + l or d or u, l or d or u)
         """
-        #need to replace raw matrix here with other adjust raw matrix
         M = ((self.rawm[i][j]+self.scorem[i-1][j-1]),"d") #max score diagonal
         X = ((self.rawm[i][j]+self.scorem[i][j-1]),"l") #max score on left
         Y = ((self.rawm[i][j]+self.scorem[i-1][j]),"u") #max score above
@@ -52,11 +50,9 @@ class global_alignment:
             self.scorem[0][j] = self.low*(j)
             self.tracem[0][j] = "l"
         self.tracem[0][0] = "s" #start
-        #score the boxing
         for i in range(1,self.len1):
             for j in range(1,self.len2):
                 self.scorem[i][j],self.tracem[i][j] = self.score_matrix(i,j)
-        #add stuff here to adjust the score matrix calculated
     def extract_scores(self):
         self.thresh = 1.5
     def score_alignment(self,chunk1,chunk2):
