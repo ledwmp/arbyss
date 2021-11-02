@@ -57,16 +57,33 @@ class global_alignment:
         """Method to help initialize matrices from peptides
         """
         self.tradition_alignment(chunk1,chunk2)
-        print(self.alignment.alignkey)
+        print([i[0] for i in self.alignment.alignkey])
+        print([i[1] for i in self.alignment.alignkey])
+
         chunk1.filter_chunks([i[0] for i in self.alignment.alignkey])
         chunk2.filter_chunks([i[1] for i in self.alignment.alignkey])
 
-
+        def filter_both_chunks(tmp_a,tmp_b,filter_list):
+            filt_chunk1 = [i._resraw for i in tmp_a[0]]
+            filt_chunk2 = [i._resraw for i in tmp_b[0]]
+            tmp_lista = []
+            tmp_listb = []
+            for i,j in filter_list:
+                if i in filt_chunk1 and j in filt_chunk2:
+                    tmp_lista.append(i)
+                    tmp_listb.append(j)
+            return ([i for i in tmp_a[0] if i._resraw in tmp_lista],tmp_a[0],tmp_a[1]),\
+                        ([i for i in tmp_b[0] if i._resraw in tmp_listb],tmp_b[0],tmp_b[1])
+        for i,j in self.alignment.alignkey:
+            tmp_chunk1 = chunk1._chunklist_dict[i]
+            tmp_chunk2 = chunk2._chunklist_dict[j]
+            tmp_a,tmp_b = filter_both_chunks(tmp_chunk1,tmp_chunk2,self.alignment.alignkey)
+            alignment_score = align_chunks(tmp_a,tmp_b)
+            print(alignment_score)
         ########need to make changes here, must be able to align local alignmens of big chunks, evaluate miniature scoring on small chunks
 
 
 
-        print([len(i[0]) for i in chunk2._chunklist])
         self.pep1,self.pep2 = chunk1._chunklist,chunk2._chunklist
         self.len1,self.len2 = len(self.pep1)+1,len(self.pep2)+1
         self.init_matrix()

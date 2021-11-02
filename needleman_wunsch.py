@@ -134,7 +134,8 @@ class global_alignment:
         self.alignkey = [(self.correct1[i],self.correct2[i]) for i in range(0,len(self.align_pep1)) \
                         if (self.align_pep1[i] != "-" and self.align_pep2[i] != "-")
                         ]
-
+        print(self.align_pep1)
+        print(self.align_pep2)
         return self.align_pep1,\
                 self.align_pep2
     @staticmethod
@@ -143,7 +144,7 @@ class global_alignment:
         for i in range(0,len(align_in)):
             if align_in[i] != "-":
                 tmp_str = align_in[0:i]
-                tmp_dict[i] = i-tmp_str.count("-")
+                tmp_dict[i] = i-tmp_str.count("-") #position in alignment,raw position in original peptide
         return tmp_dict
 
 
