@@ -39,13 +39,32 @@ def align_chunks(chunk_a,chunk_b,walk):
         tmp_list.append(np.reshape(point,(1,3)))
     array_a_remap = np.vstack(tmp_list)
     tmp_score = {}
-    for k in range(1,len(chunk_a[1])-1):
-        for l in range(1,len(chunk_b[1])-1):
-            #fix thing here, need to evaulate at 0 and -1 too
-            align_a = np.array([[i._coord._X,i._coord._Y,i._coord._Z] \
-                                                for i in chunk_a[1][k-1:k+1]])
-            align_b = np.array([[i._coord._X,i._coord._Y,i._coord._Z] \
-                                                for i in chunk_b[1][l-1:l+1]])
+    lena = len(chunk_a[1])
+    lenb = len(chunk_b[1])
+    for k in range(0,lena):
+        for l in range(0,lenb):
+            if walk <= k < lena - walk:
+                align_a = np.array([[i._coord._X,i._coord._Y,i._coord._Z] \
+                                    for i in chunk_a[1][k-walk:k+walk]])
+            elif k < walk:
+                mult = k - walk
+                align_a = np.array([[i._coord._X,i._coord._Y,i._coord._Z] \
+                                    for i in [chunk_a[1][0]]*mult+chunk_a[1][:k+walk]])
+            elif lena - walk <= k:
+                mult = (k + walk) - lena
+                align_a = np.array([[i._coord._X,i._coord._Y,i._coord._Z] \
+                                    for i in chunk_a[1][k-walk:]+[chunk_a[1][-1]]*mult])
+            if walk <= l < lenb - walk:
+                align_b = np.array([[i._coord._X,i._coord._Y,i._coord._Z] \
+                                    for i in chunk_b[1][l-walk:l+walk]])
+            elif l < walk:
+                mult = l - walk
+                align_b = np.array([[i._coord._X,i._coord._Y,i._coord._Z] \
+                                    for i in [chunk_b[1][0]]*mult+chunk_b[1][:l+walk]])
+            elif lenb - walk <= l:
+                mult = (l + walk) - lenb
+                align_b = np.array([[i._coord._X,i._coord._Y,i._coord._Z] \
+                                    for i in chunk_b[1][l-walk:]+[chunk_b[1][-1]]*mult])
 
             align_a -= centroid_a
             align_b -= centroid_b

@@ -14,7 +14,7 @@ class global_alignment:
     def __init__(self,gap,inner_chunk):
         self.gap = gap
         self.inner_chunk = inner_chunk
-        self.walk = (inner_chunk-1)/2
+        self.walk = int((inner_chunk-1)/2)
     def init_matrix(self):
         """Method to initialize the raw scoring matrix
         """
@@ -44,10 +44,10 @@ class global_alignment:
         self.tracem = np.zeros((self.len1,self.len2),str)
         #fill adjusted and tracing matrices on edges
         for i in range(1,self.len1):
-            self.scorem[i][0] = self.low*(i)
+            self.scorem[i][0] = self.gap*(i)
             self.tracem[i][0] = "u"
         for j in range(1,self.len2):
-            self.scorem[0][j] = self.low*(j)
+            self.scorem[0][j] = self.gap*(j)
             self.tracem[0][j] = "l"
         self.tracem[0][0] = "s" #start
         for i in range(1,self.len1):
@@ -135,8 +135,8 @@ class global_alignment:
                             "".join([i._aa_one for i in b._chunklist]))
 
 def main():
-    my_chain_a = list_of_atoms(sys.argv[1],"A")
-    my_chain_b = list_of_atoms(sys.argv[2],"A")
+    my_chain_a = list_of_atoms(sys.argv[1],"C")
+    my_chain_b = list_of_atoms(sys.argv[2],"C")
     my_chain_a = chain(my_chain_a)
     my_chain_b = chain(my_chain_b)
     my_chain_a.chunk_out(25)
