@@ -1,3 +1,2 @@
 # arbyss
-Structural alignment algorithm 
-
+alignment refinement by structural superimposition
