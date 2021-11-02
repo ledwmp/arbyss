@@ -21,11 +21,13 @@ class global_alignment:
 
         """
         self.rawm = np.zeros((self.len1,self.len2),float)
-        for i in range(1,self.len1):
-            self.rawm[i][0] = self.gap
-        for j in range(1,self.len2):
-            self.rawm[0][j] = self.gap
-    def score_matrix(self,i,j,low,high):
+        #for i in range(1,self.len1):
+        #    self.rawm[i][0] = self.gap
+        #for j in range(1,self.len2):
+        #    self.rawm[0][j] = self.gap
+        self.rawm.fill(self.gap)
+        self.rawm[0][0] = 0.
+    def score_matrix(self,i,j):
         """Method to score the recursion matrices
         Args:
             i: position in peptide1
@@ -39,7 +41,7 @@ class global_alignment:
         M = ((self.rawm[i][j]+self.scorem[i-1][j-1]),"d")
         X = ((self.rawm[i][j]+self.scorem[i][j-1]),"l")
         Y = ((self.rawm[i][j]+self.scorem[i-1][j]),"u")
-        return max(M,X,Y,key = lambda x: x[0])[0],max(M,X,Y,key = lambda x: x[0])[1]
+        return min(M,X,Y,key = lambda x: x[0])[0],min(M,X,Y,key = lambda x: x[0])[1]
 
     def init_adjustmatrix(self):
         self.scorem = np.zeros((self.len1,self.len2),float)
@@ -53,15 +55,12 @@ class global_alignment:
         self.tracem[0][0] = "s"
         for i in range(1,self.len1):
             for j in range(1,self.len2):
-                self.scorem[i][j],self.tracem[i][j] = self.score_matrix(i,j,self.low,self.high)
+                self.scorem[i][j],self.tracem[i][j] = self.score_matrix(i,j)
         #add stuff here to adjust the score matrix calculated
     def score_alignment(self,chunk1,chunk2):
         """Method to help initialize matrices from peptides
         """
         self.tradition_alignment(chunk1,chunk2)
-        print([i[0] for i in self.alignment.alignkey])
-        print([i[1] for i in self.alignment.alignkey])
-
         chunk1.filter_chunks([i[0] for i in self.alignment.alignkey])
         chunk2.filter_chunks([i[1] for i in self.alignment.alignkey])
 
@@ -76,6 +75,9 @@ class global_alignment:
                     tmp_listb.append(j)
             return ([i for i in tmp_a[0] if i._resraw in tmp_lista],tmp_a[0],tmp_a[1]),\
                         ([i for i in tmp_b[0] if i._resraw in tmp_listb],tmp_b[0],tmp_b[1])
+        self.pep1,self.pep2 = chunk1._chunklist,chunk2._chunklist
+        self.len1,self.len2 = len(self.pep1)+1,len(self.pep2)+1
+        self.init_matrix()
         tmp_dict = defaultdict(list)
         for i,j in self.alignment.alignkey:
             tmp_chunk1 = chunk1._chunklist_dict[i]
@@ -84,27 +86,11 @@ class global_alignment:
             alignment_score = align_chunks(tmp_a,tmp_b)
             for k,l in alignment_score.items():
                 tmp_dict[k].append(l)
-        for i,j in self.alignment.alignkey[1:-2]:
-            print((i,j),min(tmp_dict[(i,j)]))
-
+        for i,j in tmp_dict.items():
+            self.rawm[i[0]][i[1]] = min(j)
+        print(self.rawm)
         #print({i:np.mean(j) for i,j in tmp_dict.items()})
         ########need to make changes here, must be able to align local alignmens of big chunks, evaluate miniature scoring on small chunks
-
-
-
-        self.pep1,self.pep2 = chunk1._chunklist,chunk2._chunklist
-        self.len1,self.len2 = len(self.pep1)+1,len(self.pep2)+1
-        self.init_matrix()
-        for i in range(1,self.len1):
-            amino_1 = self.pep1[i-1]
-            for j in range(1,self.len2):
-                amino_2 = self.pep2[j-1]
-                print(amino_1,amino_2)
-                self.rawm[i][j] = alignment_score = align_chunks(amino_1,amino_2)
-                #self.scorem[i][j],self.tracem[i][j],self.rawm[i][j] = self.score_matrix(amino_1,amino_2,i,j)
-        #plt.hist(self.rawm.flatten(),bins=25)
-        #plt.show()
-        #self.extract_scores()
         self.init_adjustmatrix()
         print(self.scorem)
         print(self.tracem)
@@ -114,34 +100,30 @@ class global_alignment:
         i,j = self.len1-1,self.len2-1
         self.traceback_pep1 = list()
         self.traceback_pep2 = list()
-        amino_key = self.pep2[j-1]+"_"+self.pep1[i-1]
-        M,X,Y = self.score_matrix(i,j,amino_key,True)
-        cell_concat = M+X+Y
-        max_score = cell_concat.index(max(cell_concat)) #which matrix to start in
+        max_score = self.tracem[i][j] #which matrix to start in
         while i > 0 or j > 0:
-            if max_score%3 == 0:
+            if max_score == "d":
                 #previous matrix was M
-                self.traceback_pep2.append(self.pep2[j-1])
-                self.traceback_pep1.append(self.pep1[i-1])
+                self.traceback_pep2.append(self.pep2[j-1][1][1]._aa_one)
+                self.traceback_pep1.append(self.pep1[i-1][1][1]._aa_one)
                 i -= 1
                 j -= 1
-                max_score = M.index(max(M)) #matrix to continue in
-            elif max_score%3 == 1:
+            elif max_score == "l":
                 #previous matrix was X
-                self.traceback_pep2.append(self.pep2[j-1])
+                self.traceback_pep2.append(self.pep2[j-1][1][1]._aa_one)
                 self.traceback_pep1.append("-")
                 j -= 1
-                max_score = X.index(max(X))
-            elif max_score%3 == 2:
+            elif max_score == "u":
                 #previous matrix was Y
                 self.traceback_pep2.append("-")
-                self.traceback_pep1.append(self.pep1[i-1])
+                self.traceback_pep1.append(self.pep1[i-1][1][1]._aa_one)
                 i -= 1
-                max_score = Y.index(max(Y))
-            amino_key = self.pep2[j-1]+"_"+self.pep1[i-1] #next amino acids
-            M,X,Y = self.score_matrix(i,j,amino_key,True) #find scores in next cells
+            max_score = self.tracem[i][j]
+        print("".join(self.traceback_pep1[::-1]))
+        print("".join(self.traceback_pep2[::-1]))
         return "".join(self.traceback_pep1[::-1]),\
             "".join(self.traceback_pep2[::-1])
+
     def tradition_alignment(self,a,b):
         self.alignment = needleman_wunsch("".join([i[1]._aa_one for i in a._chunklist_inner]),"".join([i[1]._aa_one for i in b._chunklist_inner]))
 
@@ -154,8 +136,8 @@ test.score_alignment("MATKGTKRSYEQMETDGERQNATEIRASVGKMIDGIGRFYIQMCTELKLSDYEGRLIQ
 
 print test.traceback()
 """
-my_chain_a = list_of_atoms(sys.argv[1],"A")
-my_chain_b = list_of_atoms(sys.argv[2],"A")
+my_chain_a = list_of_atoms(sys.argv[1],"C")
+my_chain_b = list_of_atoms(sys.argv[2],"C")
 my_chain_a = chain(my_chain_a)
 my_chain_b = chain(my_chain_b)
 my_chain_a.chunk_out(25,3)
@@ -164,7 +146,7 @@ my_chain_b.chunk_out(25,3)
 
 test = global_alignment(3.8,1.)#3.8)
 test.score_alignment(my_chain_a,my_chain_b)
-
+test.traceback()
 """
 for i in range(100,105):#len(my_chain_a._residuelist)):
     for j in range(75,125):#len(my_chain_b._residuelist)):
