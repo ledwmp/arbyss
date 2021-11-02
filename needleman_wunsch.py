@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 
 def parse_blosumfile(blosum_path):
     """Reads a substitution matrix in to a dictionary
@@ -24,6 +23,8 @@ def parse_blosumfile(blosum_path):
 blosum_matrix = parse_blosumfile("blosum62.txt")
 
 def parse_fasta(fasta_path):
+    """Method to read fasta file from path
+    """
     fasta = []
     with open(fasta_path) as r:
         header = next(r)
@@ -127,24 +128,34 @@ class global_alignment:
                 max_score = Y.index(max(Y))
             amino_key = self.pep2[j-1]+"_"+self.pep1[i-1] #next amino acids
             M,X,Y = self.score_matrix(i,j,amino_key,True) #find scores in next cells
-        self.align_pep1 = "".join(self.traceback_pep1[::-1])
-        self.align_pep2 = "".join(self.traceback_pep2[::-1])
+
+        self.align_pep1 = "".join(self.traceback_pep1[::-1]) #string of alignment1
+        self.align_pep2 = "".join(self.traceback_pep2[::-1]) #string of alignment2
+
         self.correct1 = self.resolve_alignment_dict(self.align_pep1)
         self.correct2 = self.resolve_alignment_dict(self.align_pep2)
+
+        #alignment key with positions in original peptides that aligned to eachother
         self.alignkey = [(self.correct1[i],self.correct2[i]) for i in range(0,len(self.align_pep1)) \
                         if (self.align_pep1[i] != "-" and self.align_pep2[i] != "-")
                         ]
         print(self.align_pep1)
         print(self.align_pep2)
-        return self.align_pep1,\
-                self.align_pep2
+
+        return self.align_pep1,self.align_pep2
     @staticmethod
     def resolve_alignment_dict(align_in):
+        """Method to adjust alignment indices back to original indices
+        Args:
+            str of alignment
+        Returns:
+            dict with key = position in alignment,value = position in original peptide
+        """
         tmp_dict = {}
         for i in range(0,len(align_in)):
             if align_in[i] != "-":
                 tmp_str = align_in[0:i]
-                tmp_dict[i] = i-tmp_str.count("-") #position in alignment,raw position in original peptide
+                tmp_dict[i] = i-tmp_str.count("-")
         return tmp_dict
 
 
@@ -153,8 +164,3 @@ def needleman_wunsch(pepA,pepB):
     align.score_alignment(pepA,pepB)
     align.traceback()
     return align
-
-
-pepA = "MATKGTKRSYEQMETDGERQNATEIRASVGKMIDGIGRFYIQMCTELKLSDYEGRLIQNSLTIERMVLSAFDERRNKYLEEHPSAGKDPKKTGGPIYRRVDGKWRRELILYDKEEIRRIWRQANNGDDATAGLTHMMIWHSNLNDATYQRTRALVRTGMDPRMCSLMQGSTLPRRSGAAGAAVKGVGTMVMELIRMIKRGINDRNFWRGENGRRTRIAYERMCNILKGKFQTAAQRTMVDQVRESRNPGNAEFEDLIFLARSALILRGSVAHKSCLPACVYGSAVASGYDFEREGYSLVGIDPFRLLQNSQVYSLIRPNENPAHKSQLVWMACHSAAFEDLRVSSFIRGTKVVPRGKLSTRGVQIASNENMETMESSTLELRSRYWAIRTRSGGNTNQQRASSGQISIQPTFSVQRNLPFDRPTIMAAFTGNTEGRTSDMRTEIIRLMESARPEDVSFQGRGVFELSDEKATSPIVPSFDMSNEGSYFFGDNAEEYDN"
-#pepB = "MATKGTKRSYEQMETDGERQNATEIRASVGKMIDGIGRFYIQMCTELKLSDYEGRLIQNSLTIERMVLSAFDERRNKYLEEHPSAGKDPKKTGGPIYRRVDGKWRRELILYDKEEIRRIWRQANNGDDATAGLTHMMIWHSNLNDATYQRTRALVRTGMDPRMCSLMQGSTLPRRSGAAGAAVKGVGTMVMELIRMIKRGINDRNFWRGENGRRTRIAYERMCNILKGKFQTAAQRTMVDQVRESRNPGNAEFEDLIFLARSALILRGSVAHKSCLPACVYGSAVASGYDFEREGYSLVGIDPFRLLQNSQVYSLIRPNENPAHKSQLVWMACHSAAFEDLRVSSFIRGTKVVPRGKLSTRGVQIASNENMETMESSTLELRSRYWAIRTRSGGNTNQQRASSGQISIQPTFSVQRNLPFDRPTIMAAFTGNTEGRTSDMRTEIIRLMESARPEDVSFQGRGVFELSDEKATSPIVPSFDMSNEGSYFFGDNAEEYDN"
-pepB ="MSNMDIDSINTGTIDKTPEELTPGTSGATRPIIKPATLAPPSNKRTRNPSPERTTTSSETDIGRKIQKKQTPTEIKKSVYKMVVKLGEFYNQMMVKAGLNDDMERNLIQNAQAVERILLAATDDKKTEYQKKRNARDVKEGKEEIDHNKTGGTFYKMVRDDKTIYFSPIKITFLKEEVKTMYKTTMGSDGFSGLNHIMIGHSQMNDVCFQRSKGLKRVGLDPSLISTFAGSTLPRRSGTTGVAIKGGGTLVDEAIRFIGRAMADRGLLRDIKAKTAYEKILLNLKNKCSAPQQKALVDQVIGSRNPGIADIEDLTLLARSMVVVRPSVASKVVLPISIYAKIPQLGFNTEEYSMVGYEAMALYNMATPVSILRMGDDAKDKSQLFFMSCFGAAYEDLRVLSALTGTEFKPRSALKCKGFHVPAKEQVEGMGAALMSIKLQFWAPMTRSGGNEVSGEGGSGQISCSPVFAVERPIALSKQAVRRMLSMNVEGRDADVKGNLLKMMNDSMAKKTSGNAFIGKKMFQISDKNKVNPIEIPIKQTIPNFFFGRDTAEDYDDLDY"

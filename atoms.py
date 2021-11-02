@@ -45,14 +45,13 @@ class atom:
 		self._res = atom_list[3]
 
 class alignment_block:
+	"""Object that holds a substring to be used for structural alignment
 	"""
-	"""
-	def __init__(self,res_list,aa_one,resraw,walk_inner,walk_outer):
-		self._res_list = res_list
-		self._aa_one = aa_one
-		self._resraw = resraw
-		self._walk_inner = walk_inner
-		self._walk_outer = walk_outer
+	def __init__(self,res_list,aa_one,resraw,walk_outer):
+		self._res_list = res_list #list of pared residues in substring
+		self._aa_one = aa_one #aa
+		self._resraw = resraw #raw position in peptide
+		self._walk_outer = walk_outer #size of substring for alignments
 
 
 class chain:
@@ -84,7 +83,7 @@ class chain:
 		self._paredlist = residue_pare
 		self._chainlen = len(self._residuelist)
 
-	def chunk_out(self,chunk_size_outer,chunk_size_inner):
+	def chunk_out(self,chunk_size_outer):
 		"""Method to chunk out sub-peptides
 		Args:
 			chunk_size: size of peptide surrounding residue
@@ -95,8 +94,6 @@ class chain:
 		self.make_residue()
 		len_chain = self._chainlen
 		walk_outer = int((chunk_size_outer-1)/2)
-		walk_inner = int((chunk_size_inner - 1)/2)
-		self._walk_inner = walk_inner
 		self._walk_outer = walk_outer
 		for i in range(0,len_chain):
 			if walk_outer <= i < len_chain-walk_outer:
@@ -105,7 +102,12 @@ class chain:
 				chunk = self._paredlist[0:i+walk_outer+1]
 			elif len_chain-walk_outer <= i:
 				chunk = self._paredlist[i-walk_outer:]
-			tmp_list.append(alignment_block(chunk,self._paredlist[i]._aa_one,self._paredlist[i]._resraw,walk_inner,walk_outer))
+			tmp_list.append(alignment_block(\
+							chunk,\
+							self._paredlist[i]._aa_one,\
+							self._paredlist[i]._resraw,\
+							walk_outer,\
+							))
 		self._chunklist = tmp_list
 		self._chunklist_dict = {i._resraw:i for i in self._chunklist}
 		return self._chunklist
