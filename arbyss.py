@@ -12,19 +12,13 @@ class global_alignment:
     """Alignment class to implement needleman-wunsch with gap, extend2, and extend2+
 
     """
-    def __init__(self,gap,high_low):
+    def __init__(self,gap):
         self.gap = gap
-        self.high = high_low
-        self.low = -1.*high_low
     def init_matrix(self):
         """Method to initialize the recursion matrices
 
         """
         self.rawm = np.zeros((self.len1,self.len2),float)
-        #for i in range(1,self.len1):
-        #    self.rawm[i][0] = self.gap
-        #for j in range(1,self.len2):
-        #    self.rawm[0][j] = self.gap
         self.rawm.fill(self.gap)
         self.rawm[0][0] = 0.
     def score_matrix(self,i,j):
@@ -61,20 +55,18 @@ class global_alignment:
         """Method to help initialize matrices from peptides
         """
         self.tradition_alignment(chunk1,chunk2)
-        chunk1.filter_chunks([i[0] for i in self.alignment.alignkey])
-        chunk2.filter_chunks([i[1] for i in self.alignment.alignkey])
 
         def filter_both_chunks(tmp_a,tmp_b,filter_list):
-            filt_chunk1 = [i._resraw for i in tmp_a[0]]
-            filt_chunk2 = [i._resraw for i in tmp_b[0]]
+            filt_chunk1 = [i._resraw for i in tmp_a._res_list]
+            filt_chunk2 = [i._resraw for i in tmp_b._res_list]
             tmp_lista = []
             tmp_listb = []
             for i,j in filter_list:
                 if i in filt_chunk1 and j in filt_chunk2:
                     tmp_lista.append(i)
                     tmp_listb.append(j)
-            return ([i for i in tmp_a[0] if i._resraw in tmp_lista],tmp_a[0],tmp_a[1]),\
-                        ([i for i in tmp_b[0] if i._resraw in tmp_listb],tmp_b[0],tmp_b[1])
+            return ([i for i in tmp_a._res_list if i._resraw in tmp_lista],[*tmp_a._res_list]),\
+                        ([i for i in tmp_b._res_list if i._resraw in tmp_listb],[*tmp_b._res_list])
         self.pep1,self.pep2 = chunk1._chunklist,chunk2._chunklist
         self.len1,self.len2 = len(self.pep1)+1,len(self.pep2)+1
         self.init_matrix()
@@ -89,13 +81,11 @@ class global_alignment:
         for i,j in tmp_dict.items():
             self.rawm[i[0]][i[1]] = min(j)
         print(self.rawm)
-        #print({i:np.mean(j) for i,j in tmp_dict.items()})
-        ########need to make changes here, must be able to align local alignmens of big chunks, evaluate miniature scoring on small chunks
         self.init_adjustmatrix()
         print(self.scorem)
         print(self.tracem)
     def traceback(self):
-        """Method to determine which matrix to trace through and create alignment
+        """Method to trace through the tracing matrix and complete alignment
         """
         i,j = self.len1-1,self.len2-1
         self.traceback_pep1 = list()
@@ -104,19 +94,19 @@ class global_alignment:
         while i > 0 or j > 0:
             if max_score == "d":
                 #previous matrix was M
-                self.traceback_pep2.append(self.pep2[j-1][1][1]._aa_one)
-                self.traceback_pep1.append(self.pep1[i-1][1][1]._aa_one)
+                self.traceback_pep2.append(self.pep2[j-1]._aa_one)
+                self.traceback_pep1.append(self.pep1[i-1]._aa_one)
                 i -= 1
                 j -= 1
             elif max_score == "l":
                 #previous matrix was X
-                self.traceback_pep2.append(self.pep2[j-1][1][1]._aa_one)
+                self.traceback_pep2.append(self.pep2[j-1]._aa_one)
                 self.traceback_pep1.append("-")
                 j -= 1
             elif max_score == "u":
                 #previous matrix was Y
                 self.traceback_pep2.append("-")
-                self.traceback_pep1.append(self.pep1[i-1][1][1]._aa_one)
+                self.traceback_pep1.append(self.pep1[i-1]._aa_one)
                 i -= 1
             max_score = self.tracem[i][j]
         print("".join(self.traceback_pep1[::-1]))
@@ -125,7 +115,7 @@ class global_alignment:
             "".join(self.traceback_pep2[::-1])
 
     def tradition_alignment(self,a,b):
-        self.alignment = needleman_wunsch("".join([i[1]._aa_one for i in a._chunklist_inner]),"".join([i[1]._aa_one for i in b._chunklist_inner]))
+        self.alignment = needleman_wunsch("".join([i._aa_one for i in a._chunklist]),"".join([i._aa_one for i in b._chunklist]))
 
 
 """
@@ -136,15 +126,15 @@ test.score_alignment("MATKGTKRSYEQMETDGERQNATEIRASVGKMIDGIGRFYIQMCTELKLSDYEGRLIQ
 
 print test.traceback()
 """
-my_chain_a = list_of_atoms(sys.argv[1],"C")
-my_chain_b = list_of_atoms(sys.argv[2],"C")
+my_chain_a = list_of_atoms(sys.argv[1],"A")
+my_chain_b = list_of_atoms(sys.argv[2],"A")
 my_chain_a = chain(my_chain_a)
 my_chain_b = chain(my_chain_b)
 my_chain_a.chunk_out(25,3)
 my_chain_b.chunk_out(25,3)
 
 
-test = global_alignment(3.8,1.)#3.8)
+test = global_alignment(3.8)#3.8)
 test.score_alignment(my_chain_a,my_chain_b)
 test.traceback()
 """

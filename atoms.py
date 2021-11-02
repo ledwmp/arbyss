@@ -44,6 +44,17 @@ class atom:
 		self._resnum = atom_list[5]
 		self._res = atom_list[3]
 
+class alignment_block:
+	"""
+	"""
+	def __init__(self,res_list,aa_one,resraw,walk_inner,walk_outer):
+		self._res_list = res_list
+		self._aa_one = aa_one
+		self._resraw = resraw
+		self._walk_inner = walk_inner
+		self._walk_outer = walk_outer
+
+
 class chain:
 	"""Object that holds a peptide chain
 	"""
@@ -80,8 +91,7 @@ class chain:
 		Returns:
 			List of residues with surrounding (n-1)/2
 		"""
-		tmp_list_outer = []
-		tmp_list_inner = []
+		tmp_list = []
 		self.make_residue()
 		len_chain = self._chainlen
 		walk_outer = int((chunk_size_outer-1)/2)
@@ -89,41 +99,13 @@ class chain:
 		self._walk_inner = walk_inner
 		self._walk_outer = walk_outer
 		for i in range(0,len_chain):
-			"""
-			if walk_inner <= i <= len_chain-walk_inner:
-				chunk_inner = self._paredlist[i-walk_inner:i+walk_inner+1]
-			elif i < walk_inner:
-				chunk_inner = [self._paredlist[0]]*(walk_inner-i) +self._paredlist[0:i+walk_inner+1]
-			elif len_chain-walk_inner < i:
-				chunk_inner = self._paredlist[i-walk_inner:]+[self._paredlist[-1]]*(i-len_chain+walk_inner+1)
-			tmp_list_inner.append(chunk_inner)
-			if walk_outer <= i <= len_chain-walk_outer:
-				chunk_outer = self._paredlist[i-walk_outer:i+walk_outer+1]
-			elif i < walk_outer:
-				chunk_outer = [self._paredlist[0]]*(walk_outer-i) +self._paredlist[0:i+walk_outer+1]
-			elif len_chain-walk_outer < i:
-				chunk_outer = self._paredlist[i-walk_outer:]+[self._paredlist[-1]]*(i-len_chain+walk_outer+1)
-			tmp_list_outer.append(chunk_outer)
-			"""
-			if walk_inner <= i < len_chain-walk_inner:
-				chunk_inner = self._paredlist[i-walk_inner:i+walk_inner+1]
-			elif i < walk_inner:
-				chunk_inner = [self._paredlist[0]]*(walk_inner-i) +self._paredlist[0:i+walk_inner+1]
-			elif len_chain-walk_inner <= i:
-				chunk_inner = self._paredlist[i-walk_inner:]+[self._paredlist[-1]]*(i-len_chain+walk_inner+1)
-			tmp_list_inner.append(chunk_inner)
 			if walk_outer <= i < len_chain-walk_outer:
-				chunk_outer = self._paredlist[i-walk_outer:i+walk_outer+1]
+				chunk = self._paredlist[i-walk_outer:i+walk_outer+1]
 			elif i < walk_outer:
-				chunk_outer = self._paredlist[0:i+walk_outer+1]
+				chunk = self._paredlist[0:i+walk_outer+1]
 			elif len_chain-walk_outer <= i:
-				chunk_outer = self._paredlist[i-walk_outer:]
-			tmp_list_outer.append(chunk_outer)
-		self._chunklist_inner = tmp_list_inner
-		self._chunklist_outer = tmp_list_outer
-		self._chunklist = [*zip(tmp_list_outer,tmp_list_inner)]
+				chunk = self._paredlist[i-walk_outer:]
+			tmp_list.append(alignment_block(chunk,self._paredlist[i]._aa_one,self._paredlist[i]._resraw,walk_inner,walk_outer))
+		self._chunklist = tmp_list
+		self._chunklist_dict = {i._resraw:i for i in self._chunklist}
 		return self._chunklist
-	def filter_chunks(self,filter_list):
-		#self._chunklist_outer = [[j for j in i if j._resraw in filter_list] for i in self._chunklist_outer]
-		#self._chunklist = [*zip(self._chunklist_outer,self._chunklist_inner)]
-		self._chunklist_dict = {i[1][self._walk_inner]._resraw:i for i in self._chunklist}
